@@ -104,6 +104,7 @@ while True:
     if player_board[pos[0]][pos[1]] == "B":
         player_board[pos[0]][pos[1]] = "X"
         draw_board_pygame(player_board, show_ships=True)
+        pygame.time.wait(2000)
         client_socket.sendall(b"HIT")
         print(f"Opponent guessed {guess} — they hit your ship!")
         print("You lose!")
@@ -111,6 +112,7 @@ while True:
     else:
         player_board[pos[0]][pos[1]] = "O"
         draw_board_pygame(player_board, show_ships=True)
+        pygame.time.wait(2000) 
         client_socket.sendall(b"MISS")
         print(f"Opponent guessed {guess} — they missed.")
 
