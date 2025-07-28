@@ -74,24 +74,33 @@ port = 5050
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((host, port))
 print("Connected to server.")
+print("Waiting for opponent to place their ship...")
 
 # === GAME SETUP ===
 player_board = create_board(BOARD_SIZE)
 guess_board = create_board(BOARD_SIZE)
 
 # === SHIP PLACEMENT ===
-if client_socket.recv(1024).decode() == "PLACE_SHIP":
-    while True:
+if client_socket.recv(1024).decode() == "PLACE_SHIPS":
+    placed = 0
+    ship_coords = []
+
+    while placed < 5:
         draw_board_pygame(player_board, show_ships=True)
-        coord = input("Enter ship location (like B3): ").strip()
+        coord = input(f"Enter location for ship #{placed + 1} (like B3): ").strip()
         pos = parse_coordinate(coord)
         if pos and player_board[pos[0]][pos[1]] == " ":
             player_board[pos[0]][pos[1]] = "B"
-            draw_board_pygame(player_board, show_ships=True)
-            client_socket.sendall(coord.encode())
-            break
-        print("Invalid or occupied. Try again.")
+            ship_coords.append(coord.upper())
+            placed += 1
+        else:
+            print("Invalid or occupied. Try again.")
+
+    draw_board_pygame(player_board, show_ships=True)
+    coord_str = ",".join(ship_coords)
+    client_socket.sendall(coord_str.encode())
     os.system("clear")
+
 
 # === GAME ANIMATION ===
 def show_message(screen, message, duration=1500, font_size=50):
@@ -104,6 +113,10 @@ def show_message(screen, message, duration=1500, font_size=50):
     pygame.time.wait(duration)
 
 # === GAME LOOP ===
+player_hits = 0
+opponent_hits = 0
+TOTAL_SHIPS = 5
+
 while True:
     # Opponent's turn
     show_message(screen, "Heading Back...", duration=1000)
@@ -114,17 +127,22 @@ while True:
 
     if player_board[pos[0]][pos[1]] == "B":
         player_board[pos[0]][pos[1]] = "X"
+        opponent_hits += 1
         draw_board_pygame(player_board, show_ships=True)
         print(f"Opponent guessed {guess} — they hit your ship!")
-        client_socket.sendall(b"HIT")
-        pygame.time.wait(2000)
-        print("You lose!")
-        break
+        if opponent_hits == TOTAL_SHIPS:
+            client_socket.sendall(b'LOSE')
+            pygame.time.wait(2000)
+            print("You lose!")
+            break
+        else:
+            client_socket.sendall(b'HIT')
+            pygame.time.wait(2000)
     else:
         player_board[pos[0]][pos[1]] = "O"
         draw_board_pygame(player_board, show_ships=True)
         print(f"Opponent guessed {guess} — they missed.")
-        client_socket.sendall(b"MISS")
+        client_socket.sendall(b'MISS')
         pygame.time.wait(2000)
 
     # Your turn
@@ -138,18 +156,24 @@ while True:
     if result == "HIT":
         print("You hit!")
         guess_board[pos[0]][pos[1]] = "X"
+        player_hits += 1
         draw_board_pygame(guess_board)
         pygame.time.wait(2000)
+        if player_hits == TOTAL_SHIPS:
+            print("You win!")
+            break
     elif result == "MISS":
         print("You missed.")
         guess_board[pos[0]][pos[1]] = "O"
         draw_board_pygame(guess_board)
         pygame.time.wait(2000)
     elif result == "LOSE":
-        print("You win!")
+        print("You hit and sunk their last ship!")
         guess_board[pos[0]][pos[1]] = "X"
         draw_board_pygame(guess_board)
         pygame.time.wait(2000)
+        print("You win!")
         break
+
 
 

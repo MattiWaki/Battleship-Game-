@@ -66,17 +66,20 @@ def parse_coordinate(coord):
         return [row, col]
     return None
 
-def place_ship(board):
-    while True:
+def place_ships(board, num_ships=5):
+    placed = 0
+    while placed < num_ships:
         draw_board_pygame(board, show_ships=True)
-        coord = input("Enter ship location (like B3): ").strip()
+        coord = input(f"Enter location for ship #{placed + 1} (e.g. B3): ").strip()
         pos = parse_coordinate(coord)
         if pos and board[pos[0]][pos[1]] == " ":
             board[pos[0]][pos[1]] = "B"
-            break
-        print("Invalid or occupied. Try again.")
+            placed += 1
+        else:
+            print("Invalid or occupied. Try again.")
     os.system("clear")
-    print("Waiting for opponent to choose their ship location...")
+    print("Waiting for opponent to choose their ship locations...")
+
 
 # === NETWORK SETUP (SERVER) ===
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -92,16 +95,17 @@ player2_board = create_board(BOARD_SIZE)
 player1_guesses = create_board(BOARD_SIZE)
 player2_guesses = create_board(BOARD_SIZE)
 
-# Player 1 places ship
-place_ship(player1_board)
-draw_board_pygame(player1_board, show_ships=True)  # Show own ship immediately
+# Player 1 places ships
+place_ships(player1_board, num_ships=5)
+draw_board_pygame(player1_board, show_ships=True)
 
-# Tell client to place ship
-conn.sendall(b'PLACE_SHIP')
+# Tell client to place ships
+conn.sendall(b'PLACE_SHIPS')
 
-# Wait for client to place ship while showing player 1's ship and keeping window responsive
+# Receive 5 ship coordinates from client
 waiting_for_client_ship = True
 conn.settimeout(0.5)
+received_ships = 0
 while waiting_for_client_ship:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -111,11 +115,15 @@ while waiting_for_client_ship:
     draw_board_pygame(player1_board, show_ships=True)
 
     try:
-        client_ship = conn.recv(1024).decode().strip()
-        if client_ship:
-            pos = parse_coordinate(client_ship)
-            if pos:
-                player2_board[pos[0]][pos[1]] = "B"
+        client_data = conn.recv(1024).decode().strip()
+        if client_data:
+            coords = client_data.split(",")
+            for coord in coords:
+                pos = parse_coordinate(coord)
+                if pos:
+                    player2_board[pos[0]][pos[1]] = "B"
+                    received_ships += 1
+            if received_ships == 5:
                 waiting_for_client_ship = False
     except socket.timeout:
         pass
@@ -138,6 +146,10 @@ def show_message(screen, message, duration=1500, font_size=50):
     pygame.time.wait(duration)
 
 # === GAME LOOP ===
+player1_hits = 0
+player2_hits = 0
+TOTAL_SHIPS = 5
+
 while True:
     # Player 1's turn (you)
     show_message(screen, "Attack!", duration=1000)
@@ -150,18 +162,26 @@ while True:
     if result == "HIT":
         print("You hit!")
         player1_guesses[pos[0]][pos[1]] = "X"
+        player1_hits += 1
         draw_board_pygame(player1_guesses, show_ships=False)
         pygame.time.wait(2000)
-        print("You win!")
-        draw_board_pygame(player1_guesses, show_ships=False)
-        conn.sendall(b'LOSE')
-        break
-    else:
+        if player1_hits == TOTAL_SHIPS:
+            print("You win!")
+            conn.sendall(b'LOSE')
+            draw_board_pygame(player1_guesses, show_ships=False)
+            break
+    elif result == "MISS":
         print("You missed.")
         player1_guesses[pos[0]][pos[1]] = "O"
         draw_board_pygame(player1_guesses, show_ships=False)
         pygame.time.wait(2000)
+    elif result == "LOSE":
+        print("You hit and sunk their last ship!")
+        player1_guesses[pos[0]][pos[1]] = "X"
         draw_board_pygame(player1_guesses, show_ships=False)
+        pygame.time.wait(2000)
+        print("You win!")
+        break
 
     # Opponent's turn
     show_message(screen, "Heading Back...", duration=1000)
@@ -172,17 +192,20 @@ while True:
 
     if player1_board[pos[0]][pos[1]] == "B":
         player1_board[pos[0]][pos[1]] = "X"
+        player2_hits += 1
         draw_board_pygame(player1_board, show_ships=True)
         print(f"Opponent guessed {opponent_guess} — they hit your ship!")
-        conn.sendall(b"HIT")
-        pygame.time.wait(2000)
-        draw_board_pygame(player1_board, show_ships=True)
-        print("You lose!")
-        break
+        if player2_hits == TOTAL_SHIPS:
+            conn.sendall(b'LOSE')
+            pygame.time.wait(2000)
+            print("You lose!")
+            break
+        else:
+            conn.sendall(b'HIT')
+            pygame.time.wait(2000)
     else:
         player1_board[pos[0]][pos[1]] = "O"
         draw_board_pygame(player1_board, show_ships=True)
         print(f"Opponent guessed {opponent_guess} — they missed.")
-        conn.sendall(b"MISS")
+        conn.sendall(b'MISS')
         pygame.time.wait(2000)
-        draw_board_pygame(player1_board, show_ships=True)
