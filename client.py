@@ -89,6 +89,7 @@ port = 5050
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((host, port))
 print("Connected to server.")
+print("Waiting for opponent to place their ship...")
 
 # === GAME SETUP ===
 player_board = create_board(BOARD_SIZE)

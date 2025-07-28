@@ -98,7 +98,7 @@ def place_ships(board, num_ships=5):
 
 # === NETWORK SETUP ===
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind(('0.0.0.0', 5050))
+server_socket.bind(('localhost', 5050))
 server_socket.listen(1)
 print("Waiting for connection...")
 conn, addr = server_socket.accept()
