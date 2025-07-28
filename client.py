@@ -1,9 +1,9 @@
-import socket
 import threading
 import os
 import time
 import pygame
 import sys
+import socket
 
 # === CONFIG ===
 BOARD_SIZE = 5

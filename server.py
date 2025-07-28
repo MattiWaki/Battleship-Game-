@@ -94,13 +94,38 @@ player2_guesses = create_board(BOARD_SIZE)
 
 # Player 1 places ship
 place_ship(player1_board)
+draw_board_pygame(player1_board, show_ships=True)  # Show own ship immediately
 
 # Tell client to place ship
 conn.sendall(b'PLACE_SHIP')
-client_ship = conn.recv(1024).decode().strip()
-pos = parse_coordinate(client_ship)
-if pos:
-    player2_board[pos[0]][pos[1]] = "B"
+
+# Wait for client to place ship while showing player 1's ship and keeping window responsive
+waiting_for_client_ship = True
+conn.settimeout(0.5)
+while waiting_for_client_ship:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    draw_board_pygame(player1_board, show_ships=True)
+
+    try:
+        client_ship = conn.recv(1024).decode().strip()
+        if client_ship:
+            pos = parse_coordinate(client_ship)
+            if pos:
+                player2_board[pos[0]][pos[1]] = "B"
+                waiting_for_client_ship = False
+    except socket.timeout:
+        pass
+    except Exception as e:
+        print("Connection error:", e)
+        pygame.quit()
+        sys.exit()
+conn.settimeout(None)
+
+print("Both players have placed their ships. Starting game...")
 
 # === GAME LOOP ===
 while True:
