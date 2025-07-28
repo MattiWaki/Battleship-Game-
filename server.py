@@ -127,9 +127,20 @@ conn.settimeout(None)
 
 print("Both players have placed their ships. Starting game...")
 
+# === GAME ANIMATIONS ===
+def show_message(screen, message, duration=1500, font_size=50):
+    font = pygame.font.SysFont(None, font_size)
+    text = font.render(message, True, (255, 255, 255))
+    rect = text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
+    screen.fill((0, 0, 0))  # Clear screen with black
+    screen.blit(text, rect)
+    pygame.display.flip()
+    pygame.time.wait(duration)
+
 # === GAME LOOP ===
 while True:
     # Player 1's turn (you)
+    show_message(screen, "Attack!", duration=1000)
     draw_board_pygame(player1_guesses, show_ships=False)
     guess = input("Your guess (e.g. C2): ").strip()
     conn.sendall(guess.encode())
@@ -153,6 +164,7 @@ while True:
         draw_board_pygame(player1_guesses, show_ships=False)
 
     # Opponent's turn
+    show_message(screen, "Heading Back...", duration=1000)
     draw_board_pygame(player1_board, show_ships=True)
     print("Waiting for opponent's move...")
     opponent_guess = conn.recv(1024).decode()
@@ -162,8 +174,8 @@ while True:
         player1_board[pos[0]][pos[1]] = "X"
         draw_board_pygame(player1_board, show_ships=True)
         print(f"Opponent guessed {opponent_guess} — they hit your ship!")
-        conn.sendall(b"HIT")  # 🔁 Send immediately
-        pygame.time.wait(2000)  # ⏱ Then pause
+        conn.sendall(b"HIT")
+        pygame.time.wait(2000)
         draw_board_pygame(player1_board, show_ships=True)
         print("You lose!")
         break
@@ -171,6 +183,6 @@ while True:
         player1_board[pos[0]][pos[1]] = "O"
         draw_board_pygame(player1_board, show_ships=True)
         print(f"Opponent guessed {opponent_guess} — they missed.")
-        conn.sendall(b"MISS")  # 🔁 Send immediately
-        pygame.time.wait(2000)  # ⏱ Then pause
+        conn.sendall(b"MISS")
+        pygame.time.wait(2000)
         draw_board_pygame(player1_board, show_ships=True)

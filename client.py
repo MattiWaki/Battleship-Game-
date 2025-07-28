@@ -92,11 +92,21 @@ if client_socket.recv(1024).decode() == "PLACE_SHIP":
             break
         print("Invalid or occupied. Try again.")
     os.system("clear")
-    print("Waiting for opponent to strike...")
+
+# === GAME ANIMATION ===
+def show_message(screen, message, duration=1500, font_size=50):
+    font = pygame.font.SysFont(None, font_size)
+    text = font.render(message, True, (255, 255, 255))
+    rect = text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
+    screen.fill((0, 0, 0))
+    screen.blit(text, rect)
+    pygame.display.flip()
+    pygame.time.wait(duration)
 
 # === GAME LOOP ===
 while True:
-    # Wait for opponent's guess
+    # Opponent's turn
+    show_message(screen, "Heading Back...", duration=1000)
     draw_board_pygame(player_board, show_ships=True)
     print("Waiting for opponent's move...")
     guess = client_socket.recv(1024).decode()
@@ -106,7 +116,7 @@ while True:
         player_board[pos[0]][pos[1]] = "X"
         draw_board_pygame(player_board, show_ships=True)
         print(f"Opponent guessed {guess} — they hit your ship!")
-        client_socket.sendall(b"HIT")  # 🔁 Send before waiting
+        client_socket.sendall(b"HIT")
         pygame.time.wait(2000)
         print("You lose!")
         break
@@ -114,10 +124,11 @@ while True:
         player_board[pos[0]][pos[1]] = "O"
         draw_board_pygame(player_board, show_ships=True)
         print(f"Opponent guessed {guess} — they missed.")
-        client_socket.sendall(b"MISS")  # 🔁 Send before waiting
+        client_socket.sendall(b"MISS")
         pygame.time.wait(2000)
 
     # Your turn
+    show_message(screen, "Attack!", duration=1000)
     draw_board_pygame(guess_board, show_ships=False)
     your_guess = input("Your guess (e.g. D4): ").strip()
     client_socket.sendall(your_guess.encode())
@@ -140,4 +151,5 @@ while True:
         draw_board_pygame(guess_board)
         pygame.time.wait(2000)
         break
+
 
