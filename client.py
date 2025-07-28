@@ -1,15 +1,17 @@
-import threading
+import socket
 import os
 import time
 import pygame
 import sys
-import socket
+import random
+import base64
 
 # === CONFIG ===
 BOARD_SIZE = 5
 CELL_SIZE = 100
 SCREEN_SIZE = BOARD_SIZE * CELL_SIZE
 COLUMN_LABELS = ["A", "B", "C", "D", "E"]
+SONAR_COST = 1
 
 # === COLORS ===
 BLUE = (30, 144, 255)
@@ -23,8 +25,13 @@ pygame.display.set_caption("Battleship (Client)")
 font = pygame.font.SysFont(None, 48)
 
 # === Load Ship Image ===
-ship_image = pygame.image.load("/Users/josephacquah/Battleship-Game-/assets/—Pngtree—small boat_7143559.png")
-ship_image = pygame.transform.scale(ship_image, (CELL_SIZE, CELL_SIZE))
+try:
+    ship_image = pygame.image.load("assets/—Pngtree—small boat_7143559.png")
+    ship_image = pygame.transform.scale(ship_image, (CELL_SIZE, CELL_SIZE))
+except:
+    print("Warning: Could not load ship image. Using placeholder.")
+    ship_image = pygame.Surface((CELL_SIZE, CELL_SIZE))
+    ship_image.fill((255, 0, 0))  # Red square as placeholder
 
 def create_board(size):
     return [[" " for _ in range(size)] for _ in range(size)]
@@ -48,6 +55,8 @@ def draw_board_pygame(board, show_ships=False):
                 text = font.render(symbol, True, WHITE)
                 text_rect = text.get_rect(center=rect.center)
                 screen.blit(text, text_rect)
+            elif symbol == "S":  # Sonar reveal
+                pygame.draw.circle(screen, (0, 255, 0), rect.center, CELL_SIZE//3)
 
     pygame.display.flip()
 
@@ -67,18 +76,19 @@ def parse_coordinate(coord):
         return [row, col]
     return None
 
-# === NETWORK SETUP (CLIENT) ===
+# === NETWORK SETUP ===
 time.sleep(2)  # Give server time to start
-host = 'localhost'  # Replace with actual ngrok host
+host = 'localhost'
 port = 5050
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((host, port))
 print("Connected to server.")
-print("Waiting for opponent to place their ship...")
 
 # === GAME SETUP ===
 player_board = create_board(BOARD_SIZE)
 guess_board = create_board(BOARD_SIZE)
+opponent_ships = []
+energy = 0
 
 # === SHIP PLACEMENT ===
 if client_socket.recv(1024).decode() == "PLACE_SHIPS":
@@ -93,16 +103,23 @@ if client_socket.recv(1024).decode() == "PLACE_SHIPS":
             player_board[pos[0]][pos[1]] = "B"
             ship_coords.append(coord.upper())
             placed += 1
+            client_socket.sendall(coord.encode())
+            ack = client_socket.recv(1024)  # Wait for ack
         else:
             print("Invalid or occupied. Try again.")
 
     draw_board_pygame(player_board, show_ships=True)
-    coord_str = ",".join(ship_coords)
-    client_socket.sendall(coord_str.encode())
     os.system("clear")
 
+    # Receive secret ship locations from server
+    while True:
+        data = client_socket.recv(1024).decode()
+        if data.startswith("SECRET_SHIPS:"):
+            secret_data = data[len("SECRET_SHIPS:"):]
+            secret_ship_locations = base64.b64decode(secret_data.encode()).decode().split(",")
+            opponent_ships = [parse_coordinate(coord) for coord in secret_ship_locations]
+            break
 
-# === GAME ANIMATION ===
 def show_message(screen, message, duration=1500, font_size=50):
     font = pygame.font.SysFont(None, font_size)
     text = font.render(message, True, (255, 255, 255))
@@ -144,10 +161,43 @@ while True:
         print(f"Opponent guessed {guess} — they missed.")
         client_socket.sendall(b'MISS')
         pygame.time.wait(2000)
+    
+    # Gain energy after each turn
+    energy = min(energy + 0.3, 3)
 
     # Your turn
     show_message(screen, "Attack!", duration=1000)
     draw_board_pygame(guess_board, show_ships=False)
+
+    # Special move option
+    print(f"\n⚡ Energy Available: {energy}")
+    print("Available Special Moves:")
+    print(" - 'Sonar Pulse' (cost: 1 energy): Reveals 2 enemy ship positions.")
+    special_move = input("Type a move name to use it, or press Enter to skip: ").strip().lower()
+
+    if special_move == "sonar pulse":
+        if energy >= SONAR_COST:
+            hidden_ships = [
+                pos for pos in opponent_ships
+                if guess_board[pos[0]][pos[1]] == " "
+            ]
+            if hidden_ships:
+                reveal_count = min(2, len(hidden_ships))
+                revealed = random.sample(hidden_ships, reveal_count)
+                print("\n📡 Sonar Pulse activated! Revealed enemy ships at:")
+                for r, c in revealed:
+                    coord = f"{COLUMN_LABELS[c]}{r+1}"
+                    print(f" - {coord}")
+                    guess_board[r][c] = "S"  # Mark as sonar-revealed
+                draw_board_pygame(guess_board)
+                pygame.time.wait(2000)
+                energy -= SONAR_COST
+            else:
+                print("No hidden enemy ships left to reveal.")
+        else:
+            print("❌ Not enough energy to use Sonar Pulse.")
+
+    # Normal attack
     your_guess = input("Your guess (e.g. D4): ").strip()
     client_socket.sendall(your_guess.encode())
     result = client_socket.recv(1024).decode()
@@ -176,4 +226,5 @@ while True:
         break
 
 
-
+client_socket.close()
+pygame.quit()
