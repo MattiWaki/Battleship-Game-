@@ -20,9 +20,15 @@ WHITE = (255, 255, 255)
 
 # === INIT PYGAME ===
 pygame.init()
+pygame.mixer.init()
 screen = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE))
 pygame.display.set_caption("Battleship (Server)")
 font = pygame.font.SysFont(None, 48)
+
+# === BACKGROUND AUDIO ===
+pygame.mixer.music.load("assets/57442525_pirates-and-rum-cinematic_by_blackalexstudio_preview.mp3")
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(-1)
 
 # === Load Ship Image ===
 try:
