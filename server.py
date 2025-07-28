@@ -135,16 +135,21 @@ while True:
     conn.sendall(guess.encode())
     result = conn.recv(1024).decode()
     pos = parse_coordinate(guess)
+
     if result == "HIT":
         print("You hit!")
         player1_guesses[pos[0]][pos[1]] = "X"
         draw_board_pygame(player1_guesses, show_ships=False)
+        pygame.time.wait(2000)
         print("You win!")
+        draw_board_pygame(player1_guesses, show_ships=False)
         conn.sendall(b'LOSE')
         break
     else:
         print("You missed.")
         player1_guesses[pos[0]][pos[1]] = "O"
+        draw_board_pygame(player1_guesses, show_ships=False)
+        pygame.time.wait(2000)
         draw_board_pygame(player1_guesses, show_ships=False)
 
     # Opponent's turn
@@ -152,17 +157,20 @@ while True:
     print("Waiting for opponent's move...")
     opponent_guess = conn.recv(1024).decode()
     pos = parse_coordinate(opponent_guess)
+
     if player1_board[pos[0]][pos[1]] == "B":
         player1_board[pos[0]][pos[1]] = "X"
         draw_board_pygame(player1_board, show_ships=True)
-        pygame.time.wait(2000)
-        conn.sendall(b"HIT")
         print(f"Opponent guessed {opponent_guess} — they hit your ship!")
+        conn.sendall(b"HIT")  # 🔁 Send immediately
+        pygame.time.wait(2000)  # ⏱ Then pause
+        draw_board_pygame(player1_board, show_ships=True)
         print("You lose!")
         break
     else:
         player1_board[pos[0]][pos[1]] = "O"
         draw_board_pygame(player1_board, show_ships=True)
-        pygame.time.wait(2000) 
-        conn.sendall(b"MISS")
         print(f"Opponent guessed {opponent_guess} — they missed.")
+        conn.sendall(b"MISS")  # 🔁 Send immediately
+        pygame.time.wait(2000)  # ⏱ Then pause
+        draw_board_pygame(player1_board, show_ships=True)

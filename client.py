@@ -101,20 +101,21 @@ while True:
     print("Waiting for opponent's move...")
     guess = client_socket.recv(1024).decode()
     pos = parse_coordinate(guess)
+
     if player_board[pos[0]][pos[1]] == "B":
         player_board[pos[0]][pos[1]] = "X"
         draw_board_pygame(player_board, show_ships=True)
-        pygame.time.wait(2000)
-        client_socket.sendall(b"HIT")
         print(f"Opponent guessed {guess} — they hit your ship!")
+        client_socket.sendall(b"HIT")  # 🔁 Send before waiting
+        pygame.time.wait(2000)
         print("You lose!")
         break
     else:
         player_board[pos[0]][pos[1]] = "O"
         draw_board_pygame(player_board, show_ships=True)
-        pygame.time.wait(2000) 
-        client_socket.sendall(b"MISS")
         print(f"Opponent guessed {guess} — they missed.")
+        client_socket.sendall(b"MISS")  # 🔁 Send before waiting
+        pygame.time.wait(2000)
 
     # Your turn
     draw_board_pygame(guess_board, show_ships=False)
@@ -122,16 +123,21 @@ while True:
     client_socket.sendall(your_guess.encode())
     result = client_socket.recv(1024).decode()
     pos = parse_coordinate(your_guess)
+
     if result == "HIT":
         print("You hit!")
         guess_board[pos[0]][pos[1]] = "X"
         draw_board_pygame(guess_board)
+        pygame.time.wait(2000)
     elif result == "MISS":
         print("You missed.")
         guess_board[pos[0]][pos[1]] = "O"
         draw_board_pygame(guess_board)
+        pygame.time.wait(2000)
     elif result == "LOSE":
         print("You win!")
         guess_board[pos[0]][pos[1]] = "X"
         draw_board_pygame(guess_board)
+        pygame.time.wait(2000)
         break
+
