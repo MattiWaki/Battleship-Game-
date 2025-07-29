@@ -29,6 +29,8 @@ font = pygame.font.SysFont(None, 48)
 pygame.mixer.music.load("assets/57442525_pirates-and-rum-cinematic_by_blackalexstudio_preview.mp3")
 pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)
+explosion_sound = pygame.mixer.Sound("assets/explosion-fx-343683.mp3")
+explosion_sound.set_volume(0.7)
 
 # === Load Ship Image ===
 try:
@@ -151,6 +153,7 @@ while True:
 
     if player_board[pos[0]][pos[1]] == "B":
         player_board[pos[0]][pos[1]] = "X"
+        explosion_sound.play()
         opponent_hits += 1
         draw_board_pygame(player_board, show_ships=True)
         print(f"Opponent guessed {guess} — they hit your ship!")
@@ -212,6 +215,7 @@ while True:
 
     if result == "HIT":
         print("You hit!")
+        explosion_sound.play()
         guess_board[pos[0]][pos[1]] = "X"
         player_hits += 1
         draw_board_pygame(guess_board)
