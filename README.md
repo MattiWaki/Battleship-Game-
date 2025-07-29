@@ -53,10 +53,10 @@ Then run: python server.py
 
 3. Modify the client code:
 In client.py, replace:
-host = 'localhost'
+host = 'localhost',
 port = 5050
-with:
-**host = '0.tcp.ngrok.io' (whatever Ngrok gives you)**
+with the forwarded address:
+**host = '0.tcp.ngrok.io' (whatever Ngrok gives you)**,
 **port = 12345 (whatever Ngrok gives you)**
 Then run: python client.py
 
