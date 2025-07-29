@@ -1,6 +1,6 @@
 **Battleship Multiplayer Game (Python + Pygame + Sockets + Ngrok)**
 
-This is a two-player Battleship game built using Python, sockets, and Pygame. Each player places 5 ships on a 5×5 grid and takes turns guessing the opponent’s ship locations. The game includes a graphical board, sound effects, and a special move called Sonar Pulse that reveals two enemy ships using built-up energy.
+This is a two-player Battleship game built using Python, sockets, and Pygame. Each player places 5 ships on a 5×5 grid and takes turns guessing the opponent’s ship locations. The game includes a graphical board, sound effects, and a special move called Sonar Pulse that reveals two enemy ships using built-up energy. **More moves will potentially be added in the future.**
 
 **How to Play:**
 
@@ -14,9 +14,9 @@ This is a two-player Battleship game built using Python, sockets, and Pygame. Ea
 
   - "X" for hits,
 
-  - "O" for misses,
+  - Broken planks for misses,
 
-  - "S" for sonar-revealed ship locations.
+  - Green dots for sonar-revealed ship locations.
 
 - After each turn, you build energy (up to 3 max).
 
@@ -59,18 +59,6 @@ with:
 **host = '0.tcp.ngrok.io' (whatever Ngrok gives you)**
 **port = 12345 (whatever Ngrok gives you)**
 Then run: python client.py
-
-**Folder Structure:**
-
-Battleship/
-├── server.py
-├── client.py
-├── assets/
-│ ├── 57442525_pirates-and-rum-cinematic_by_blackalexstudio_preview.mp3
-│ ├── explosion-fx-343683.mp3
-│ ├── —Pngtree—small boat_7143559.png
-│ └── —Pngtree—square plank with broken edges_5854986.png
-├── README.md
 
 **Requirements:**
 
