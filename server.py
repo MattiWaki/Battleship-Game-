@@ -59,8 +59,10 @@ def draw_board_pygame(board, show_ships=False):
             symbol = board[row][col]
             if symbol == "B" and show_ships:
                 screen.blit(ship_image, rect)
-            elif symbol in ["X", "O"]:
-                text = font.render(symbol, True, WHITE)
+            elif symbol == "X":
+                screen.blit(hit_image, rect)
+            elif symbol == "O":
+                text = font.render("O", True, WHITE)
                 text_rect = text.get_rect(center=rect.center)
                 screen.blit(text, text_rect)
             elif symbol == "S":  # Sonar reveal
@@ -97,6 +99,15 @@ def place_ships(board, num_ships=5):
             print("Invalid or occupied. Try again.")
     os.system("clear")
     print("Waiting for opponent to choose their ship locations...")
+    
+# === Load Hit Image ===
+try:
+    hit_image = pygame.image.load("assets/—Pngtree—square plank with broken edges_5854986.png")
+    hit_image = pygame.transform.scale(hit_image, (CELL_SIZE, CELL_SIZE))
+except:
+    print("Warning: Could not load hit image. Using placeholder.")
+    hit_image = pygame.Surface((CELL_SIZE, CELL_SIZE))
+    hit_image.fill((255, 255, 0))  # Yellow square as fallback
 
 # === NETWORK SETUP ===
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
