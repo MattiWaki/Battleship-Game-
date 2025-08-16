@@ -1,4 +1,4 @@
-#Battleship Multiplayer Game
+# Battleship Multiplayer Game
 
 This is a two-player Battleship game built using Python, sockets, and Pygame. Each player places 5 ships on a 5×5 grid and takes turns guessing the opponent’s ship locations. The game includes a graphical board, sound effects, and a special move called Sonar Pulse that reveals two enemy ships using built-up energy. **More moves will potentially be added in the future.**
 
