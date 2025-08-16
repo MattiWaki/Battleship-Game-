@@ -4,7 +4,7 @@ This is a two-player Battleship game built using Python, sockets, and Pygame. Ea
 
 ---
 
-**How to Play:**
+## How to Play:
 
 - The game is played on a 5×5 grid labeled with rows 1–5 and columns A–E (e.g., A3, D5, etc.).
 
@@ -62,7 +62,9 @@ with the forwarded address:
 **port = 12345 (whatever Ngrok gives you)**
 Then run: python client.py
 
-**Requirements:**
+---
+
+## Requirements:
 
 - Python 3.x
 
@@ -70,7 +72,9 @@ Then run: python client.py
 
 - Ngrok (for remote play)
 
-**Notes:**
+---
+
+## Notes:
 
 - Use valid coordinates like A1, C3, etc.
 
